@@ -81,18 +81,18 @@ export function* setWindowDefaultSearchQuery(action) {
 
 /** @private */
 export function getAnnotationsBySearch(state, { canvasIds, companionWindowIds, windowId }) {
-  const annotationBySearch = Object.keys(companionWindowIds)
-    .reduce((accumulator, companionWindowId) => {
-      const annotations = getSearchAnnotationsForCompanionWindow(state, {
-        companionWindowId, windowId,
-      });
-      const resourceAnnotations = annotations.resources;
-      const hitAnnotation = resourceAnnotations.find(r => canvasIds.includes(r.targetId));
+  const annotationBySearch = companionWindowIds.reduce((accumulator, companionWindowId) => {
+    const annotations = getSearchAnnotationsForCompanionWindow(state, {
+      companionWindowId, windowId,
+    });
 
-      if (hitAnnotation) accumulator[companionWindowId] = [hitAnnotation.id];
+    const resourceAnnotations = annotations.resources;
+    const hitAnnotation = resourceAnnotations.find(r => canvasIds.includes(r.targetId));
 
-      return accumulator;
-    }, {});
+    if (hitAnnotation) accumulator[companionWindowId] = [hitAnnotation.id];
+
+    return accumulator;
+  }, {});
 
   return annotationBySearch;
 }
@@ -152,7 +152,7 @@ export function* setCanvasOfFirstSearchResult({ companionWindowId, windowId }) {
   );
   if (!annotations || annotations.length === 0) return;
 
-  const annotationIds = annotations.map(a => a.id);
+  const annotationIds = [annotations[0].id];
   yield put(selectContentSearchAnnotation(windowId, companionWindowId, annotationIds));
 }
 

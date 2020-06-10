@@ -109,12 +109,10 @@ export const searchesReducer = (state = {}, action) => {
       return {
         ...state,
         [action.windowId]: Object.keys(state[action.windowId]).reduce((object, key) => {
-          if (Object.keys(action.annotationsBySearch).includes(key)) {
-            object[key] = { // eslint-disable-line no-param-reassign
-              ...state[action.windowId][key],
-              selectedContentSearchAnnotation: action.annotationsBySearch[key],
-            };
-          }
+          object[key] = { // eslint-disable-line no-param-reassign
+            ...state[action.windowId][key],
+            selectedContentSearchAnnotation: action.annotationsBySearch[key],
+          };
           return object;
         }, {}),
       };
