@@ -155,7 +155,7 @@ export const windowsReducer = (state = {}, action) => {
         ...state,
         [action.windowId]: {
           ...state[action.windowId],
-          hoveredAnnotationId: action.annotationId,
+          hoveredAnnotationIds: action.annotationIds,
         },
       };
     case ActionTypes.TOGGLE_ANNOTATION_DISPLAY:

@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import clsx from 'clsx';
 import Chip from '@material-ui/core/Chip';
 import MenuList from '@material-ui/core/MenuList';
 import MenuItem from '@material-ui/core/MenuItem';
@@ -42,7 +43,7 @@ export class CanvasAnnotations extends Component {
     const { allAnnotationsAreHighlighted, hoverAnnotation, windowId } = this.props;
     if (allAnnotationsAreHighlighted) return;
 
-    hoverAnnotation(windowId, annotation.id);
+    hoverAnnotation(windowId, [annotation.id]);
   }
 
   /** */
@@ -50,7 +51,7 @@ export class CanvasAnnotations extends Component {
     const { allAnnotationsAreHighlighted, hoverAnnotation, windowId } = this.props;
     if (allAnnotationsAreHighlighted) return;
 
-    hoverAnnotation(windowId, null);
+    hoverAnnotation(windowId, []);
   }
 
   /**
@@ -59,7 +60,7 @@ export class CanvasAnnotations extends Component {
   render() {
     const {
       annotations, classes, index, label, selectedAnnotationId, t, totalSize,
-      listContainerComponent, htmlSanitizationRuleSet,
+      listContainerComponent, htmlSanitizationRuleSet, hoveredAnnotationIds,
     } = this.props;
     if (annotations.length === 0) return <></>;
 
@@ -74,7 +75,12 @@ export class CanvasAnnotations extends Component {
               <MenuItem
                 button
                 component={listContainerComponent}
-                className={classes.annotationListItem}
+                className={clsx(
+                  classes.annotationListItem,
+                  {
+                    [classes.hovered]: hoveredAnnotationIds.includes(annotation.id),
+                  },
+                )}
                 key={annotation.id}
                 annotationid={annotation.id}
                 selected={selectedAnnotationId === annotation.id}
@@ -117,6 +123,7 @@ CanvasAnnotations.propTypes = {
   classes: PropTypes.objectOf(PropTypes.string),
   deselectAnnotation: PropTypes.func.isRequired,
   hoverAnnotation: PropTypes.func.isRequired,
+  hoveredAnnotationIds: PropTypes.arrayOf(PropTypes.string),
   htmlSanitizationRuleSet: PropTypes.string,
   index: PropTypes.number.isRequired,
   label: PropTypes.string.isRequired,
@@ -130,6 +137,7 @@ CanvasAnnotations.propTypes = {
 CanvasAnnotations.defaultProps = {
   annotations: [],
   classes: {},
+  hoveredAnnotationIds: [],
   htmlSanitizationRuleSet: 'iiif',
   listContainerComponent: 'li',
   selectedAnnotationId: undefined,

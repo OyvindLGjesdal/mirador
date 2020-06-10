@@ -57,6 +57,16 @@ export default {
         secondary: '#00BFFF',
       },
       section_divider: 'rgba(0, 0, 0, 0.25)',
+      annotations: {
+        default: { strokeStyle: '#00BFFF' },
+        hovered: { strokeStyle: '#00FFFF' },
+        selected: { strokeStyle: '#ffff00' },
+      },
+      search: {
+        default: { fillStyle: '#00BFFF', globalAlpha: 0.3 },
+        hovered: { fillStyle: '#00FFFF', globalAlpha: 0.3 },
+        selected: { fillStyle: '#ffff00', globalAlpha: 0.3 },
+      }
     },
     typography: {
       body1: {

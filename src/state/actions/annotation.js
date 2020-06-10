@@ -111,8 +111,8 @@ export function toggleAnnotationDisplay(windowId) {
  * @param  {String} windowId
  * @memberof ActionCreators
  */
-export function hoverAnnotation(windowId, annotationId) {
+export function hoverAnnotation(windowId, annotationIds) {
   return {
-    annotationId, type: ActionTypes.HOVER_ANNOTATION, windowId,
+    annotationIds, type: ActionTypes.HOVER_ANNOTATION, windowId,
   };
 }

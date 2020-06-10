@@ -55,6 +55,9 @@ const mapDispatchToProps = {
 /** For withStlyes */
 const styles = theme => ({
   annotationListItem: {
+    '&$hovered': {
+      backgroundColor: theme.palette.action.hover,
+    },
     '&:hover': {
       backgroundColor: theme.palette.action.hover,
     },
@@ -66,6 +69,7 @@ const styles = theme => ({
     marginRight: theme.spacing(0.5),
     marginTop: theme.spacing(1),
   },
+  hovered: {},
   sectionHeading: {
     paddingLeft: theme.spacing(2),
     paddingRight: theme.spacing(1),

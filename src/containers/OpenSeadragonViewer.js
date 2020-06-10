@@ -7,20 +7,21 @@ import { OpenSeadragonViewer } from '../components/OpenSeadragonViewer';
 import * as actions from '../state/actions';
 import CanvasWorld from '../lib/CanvasWorld';
 import {
+  getWindow,
   getVisibleCanvasNonTiledResources,
   getCurrentCanvas,
-  getSelectedAnnotationsOnCanvases,
-  getHighlightedAnnotationsOnCanvases,
   getCanvasLabel,
   getSequenceViewingDirection,
   getLayersForVisibleCanvases,
   getVisibleCanvases,
   getViewer,
   getSearchAnnotationsForWindow,
-  getSelectedContentSearchAnnotations,
+  getSelectedContentSearchAnnotationIds,
   getCompanionWindowsForContent,
   getTheme,
   getConfig,
+  getPresentAnnotationsOnSelectedCanvases,
+  getSelectedAnnotationId,
 } from '../state/selectors';
 
 /**
@@ -29,6 +30,7 @@ import {
  * @private
  */
 const mapStateToProps = (state, { windowId }) => ({
+  annotations: getPresentAnnotationsOnSelectedCanvases(state, { windowId }),
   canvasWorld: new CanvasWorld(
     getVisibleCanvases(state, { windowId }),
     getLayersForVisibleCanvases(state, { windowId }),
@@ -36,7 +38,8 @@ const mapStateToProps = (state, { windowId }) => ({
   ),
   drawAnnotations: getConfig(state).window.forceDrawAnnotations || getCompanionWindowsForContent(state, { content: 'annotations', windowId }).length > 0,
   drawSearchAnnotations: getConfig(state).window.forceDrawAnnotations || getCompanionWindowsForContent(state, { content: 'search', windowId }).length > 0,
-  highlightedAnnotations: getHighlightedAnnotationsOnCanvases(state, { windowId }),
+  highlightAllAnnotations: getWindow(state, { windowId }).highlightAllAnnotations,
+  hoveredAnnotationIds: getWindow(state, { windowId }).hoveredAnnotationIds,
   label: getCanvasLabel(state, {
     canvasId: (getCurrentCanvas(state, { windowId }) || {}).id,
     windowId,
@@ -48,8 +51,8 @@ const mapStateToProps = (state, { windowId }) => ({
     state,
     { windowId },
   ),
-  selectedAnnotations: getSelectedAnnotationsOnCanvases(state, { windowId }),
-  selectedContentSearchAnnotations: getSelectedContentSearchAnnotations(state, { windowId }),
+  selectedAnnotationIds: getSelectedContentSearchAnnotationIds(state, { windowId })
+    + [getSelectedAnnotationId(state, { windowId })],
   viewer: getViewer(state, { windowId }),
 });
 
