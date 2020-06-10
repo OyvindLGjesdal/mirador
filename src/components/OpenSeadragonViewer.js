@@ -97,6 +97,8 @@ export class OpenSeadragonViewer extends Component {
     const {
       viewer,
       canvasWorld,
+      drawAnnotations,
+      drawSearchAnnotations,
       highlightedAnnotations, selectedAnnotations,
       searchAnnotations, selectedContentSearchAnnotations,
     } = this.props;
@@ -114,11 +116,15 @@ export class OpenSeadragonViewer extends Component {
       selectedContentSearchAnnotations, prevProps.selectedContentSearchAnnotations,
     );
 
+    const redrawAnnotations = drawAnnotations !== prevProps.drawAnnotations
+      || drawSearchAnnotations !== prevProps.drawSearchAnnotations;
+
     if (
       searchAnnotationsUpdated
       || selectedContentSearchAnnotationsUpdated
       || highlightsUpdated
       || selectionsUpdated
+      || redrawAnnotations
     ) {
       this.updateCanvas = this.canvasUpdateCallback();
       this.viewer.forceRedraw();
@@ -349,6 +355,8 @@ export class OpenSeadragonViewer extends Component {
   /** */
   renderAnnotations() {
     const {
+      drawAnnotations,
+      drawSearchAnnotations,
       searchAnnotations,
       selectedContentSearchAnnotations,
       highlightedAnnotations,
@@ -356,15 +364,19 @@ export class OpenSeadragonViewer extends Component {
       palette,
     } = this.props;
 
-    this.annotationsToContext(searchAnnotations, palette.highlights.secondary, false, true);
-    this.annotationsToContext(
-      selectedContentSearchAnnotations,
-      palette.highlights.primary,
-      true, true,
-    );
+    if (drawSearchAnnotations) {
+      this.annotationsToContext(searchAnnotations, palette.highlights.secondary, false, true);
+      this.annotationsToContext(
+        selectedContentSearchAnnotations,
+        palette.highlights.primary,
+        true, true,
+      );
+    }
 
-    this.annotationsToContext(highlightedAnnotations, palette.highlights.secondary);
-    this.annotationsToContext(selectedAnnotations, palette.highlights.primary, true);
+    if (drawAnnotations) {
+      this.annotationsToContext(highlightedAnnotations, palette.highlights.secondary);
+      this.annotationsToContext(selectedAnnotations, palette.highlights.primary, true);
+    }
   }
 
   /**
@@ -401,6 +413,8 @@ export class OpenSeadragonViewer extends Component {
 
 OpenSeadragonViewer.defaultProps = {
   children: null,
+  drawAnnotations: true,
+  drawSearchAnnotations: true,
   highlightedAnnotations: [],
   infoResponses: [],
   label: null,
@@ -417,6 +431,8 @@ OpenSeadragonViewer.propTypes = {
   canvasWorld: PropTypes.instanceOf(CanvasWorld).isRequired,
   children: PropTypes.node,
   classes: PropTypes.objectOf(PropTypes.string).isRequired,
+  drawAnnotations: PropTypes.bool,
+  drawSearchAnnotations: PropTypes.bool,
   highlightedAnnotations: PropTypes.arrayOf(PropTypes.object),
   infoResponses: PropTypes.arrayOf(PropTypes.object),
   label: PropTypes.string,

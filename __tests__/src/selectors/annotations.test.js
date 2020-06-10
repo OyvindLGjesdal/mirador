@@ -187,7 +187,7 @@ describe('getHighlightedAnnotationsOnCanvases', () => {
         },
       },
       windows: {
-        abc123: { displayAllAnnotations: true, manifestId: 'mid', visibleCanvases: ['cid1'] },
+        abc123: { highlightAllAnnotations: true, manifestId: 'mid', visibleCanvases: ['cid1'] },
       },
     };
 
@@ -224,7 +224,7 @@ describe('getHighlightedAnnotationsOnCanvases', () => {
       },
       windows: {
         abc123: {
-          displayAllAnnotations: false,
+          highlightAllAnnotations: false,
           highlightedAnnotation: 'annoId1',
           manifestId: 'mid',
           visibleCanvases: ['cid1'],

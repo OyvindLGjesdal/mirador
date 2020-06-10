@@ -124,10 +124,10 @@ export const getHighlightedAnnotationsOnCanvases = createSelector(
   [
     getPresentAnnotationsOnSelectedCanvases,
     (state, { windowId }) => state.windows[windowId].hoveredAnnotationId,
-    (state, { windowId }) => state.windows[windowId].displayAllAnnotations,
+    (state, { windowId }) => state.windows[windowId].highlightAllAnnotations,
   ],
-  (canvasAnnotations, hoveredAnnotationId, displayAllAnnotations) => {
-    if (displayAllAnnotations) return canvasAnnotations;
+  (canvasAnnotations, hoveredAnnotationId, highlightAllAnnotations) => {
+    if (highlightAllAnnotations) return canvasAnnotations;
     if (hoveredAnnotationId) {
       return canvasAnnotations.map(annotation => ({
         id: (annotation['@id'] || annotation.id),

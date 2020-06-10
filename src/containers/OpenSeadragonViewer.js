@@ -18,7 +18,9 @@ import {
   getViewer,
   getSearchAnnotationsForWindow,
   getSelectedContentSearchAnnotations,
+  getCompanionWindowsForContent,
   getTheme,
+  getConfig,
 } from '../state/selectors';
 
 /**
@@ -26,12 +28,14 @@ import {
  * @memberof Window
  * @private
  */
-const mapStateToProps = (state, { companionWindowId, windowId }) => ({
+const mapStateToProps = (state, { windowId }) => ({
   canvasWorld: new CanvasWorld(
     getVisibleCanvases(state, { windowId }),
     getLayersForVisibleCanvases(state, { windowId }),
     getSequenceViewingDirection(state, { windowId }),
   ),
+  drawAnnotations: getConfig(state).window.forceDrawAnnotations || getCompanionWindowsForContent(state, { content: 'annotations', windowId }).length > 0,
+  drawSearchAnnotations: getConfig(state).window.forceDrawAnnotations || getCompanionWindowsForContent(state, { content: 'search', windowId }).length > 0,
   highlightedAnnotations: getHighlightedAnnotationsOnCanvases(state, { windowId }),
   label: getCanvasLabel(state, {
     canvasId: (getCurrentCanvas(state, { windowId }) || {}).id,
