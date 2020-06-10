@@ -414,11 +414,11 @@ describe('windows reducer', () => {
     });
   });
 
-  describe('HIGHLIGHT_ANNOTATION', () => {
+  describe('HOVER_ANNOTATION', () => {
     it('sets the highlightedAnnotation attribute on the given window', () => {
       const beforeState = { abc123: {} };
       const action = {
-        annotationId: 'aaa123', type: ActionTypes.HIGHLIGHT_ANNOTATION, windowId: 'abc123',
+        annotationId: 'aaa123', type: ActionTypes.HOVER_ANNOTATION, windowId: 'abc123',
       };
       const expectedState = {
         abc123: { highlightedAnnotation: 'aaa123' },

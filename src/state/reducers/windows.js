@@ -138,32 +138,24 @@ export const windowsReducer = (state = {}, action) => {
         ...state,
         [action.windowId]: {
           ...state[action.windowId],
-          selectedAnnotations: {
-            ...state[action.windowId].selectedAnnotations,
-            [action.targetId]: [
-              ...((state[action.windowId].selectedAnnotations || {})[action.targetId] || []),
-              action.annotationId,
-            ],
-          },
+          selectedAnnotationId: action.annotationId,
         },
       };
     case ActionTypes.DESELECT_ANNOTATION: {
-      const selectedAnnotations = updatedSelectedAnnotations(state, action);
-
       return {
         ...state,
         [action.windowId]: {
           ...state[action.windowId],
-          selectedAnnotations,
+          selectedAnnotationId: undefined,
         },
       };
     }
-    case ActionTypes.HIGHLIGHT_ANNOTATION:
+    case ActionTypes.HOVER_ANNOTATION:
       return {
         ...state,
         [action.windowId]: {
           ...state[action.windowId],
-          highlightedAnnotation: action.annotationId,
+          hoveredAnnotationId: action.annotationId,
         },
       };
     case ActionTypes.TOGGLE_ANNOTATION_DISPLAY:
@@ -188,22 +180,3 @@ export const windowsReducer = (state = {}, action) => {
       return state;
   }
 };
-
-/**
- * Handle removing IDs from selectedAnnotations
- * where empty targetIds are removed from state as well
- */
-function updatedSelectedAnnotations(state, action) {
-  const filteredIds = state[action.windowId]
-    .selectedAnnotations[action.targetId]
-    .filter(id => id !== action.annotationId);
-
-  if (filteredIds.length > 0) {
-    return {
-      ...state[action.windowId].selectedAnnotations,
-      [action.targetId]: filteredIds,
-    };
-  }
-
-  return remove(state[action.windowId].selectedAnnotations, action.targetId);
-}
