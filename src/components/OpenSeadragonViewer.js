@@ -1,6 +1,11 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import isEqual from 'lodash/isEqual';
+import debounce from 'lodash/debounce';
+import flatten from 'lodash/flatten';
+import last from 'lodash/last';
+import sortBy from 'lodash/sortBy';
+import xor from 'lodash/xor';
 import OpenSeadragon from 'openseadragon';
 import classNames from 'classnames';
 import ns from '../config/css-ns';
@@ -49,6 +54,8 @@ export class OpenSeadragonViewer extends Component {
     this.ref = React.createRef();
     this.onUpdateViewport = this.onUpdateViewport.bind(this);
     this.onViewportChange = this.onViewportChange.bind(this);
+    this.onCanvasClick = this.onCanvasClick.bind(this);
+    this.onCanvasMouseMove = this.onCanvasMouseMove.bind(this);
     this.zoomToWorld = this.zoomToWorld.bind(this);
     this.osdUpdating = false;
   }
@@ -78,6 +85,9 @@ export class OpenSeadragonViewer extends Component {
       this.osdUpdating = false;
     });
 
+    this.viewer.addHandler('canvas-click', this.onCanvasClick);
+    this.viewer.innerTracker.moveHandler = this.onCanvasMouseMove;
+
     this.updateCanvas = this.canvasUpdateCallback();
 
     if (viewer) {
@@ -100,7 +110,7 @@ export class OpenSeadragonViewer extends Component {
       drawAnnotations,
       drawSearchAnnotations,
       annotations, searchAnnotations,
-      hoveredAnnotationIds, selectedAnnotationIds,
+      hoveredAnnotationIds, selectedAnnotationId,
     } = this.props;
 
     const annotationsUpdated = !OpenSeadragonViewer.annotationsMatch(
@@ -110,8 +120,10 @@ export class OpenSeadragonViewer extends Component {
       searchAnnotations, prevProps.searchAnnotations,
     );
 
-    const hoveredAnnotationsUpdated = hoveredAnnotationIds !== prevProps.hoveredAnnotationIds;
-    const selectedAnnotationsUpdated = selectedAnnotationIds !== prevProps.selectedAnnotationIds;
+    const hoveredAnnotationsUpdated = (
+      xor(hoveredAnnotationIds, prevProps.hoveredAnnotationIds).length > 0
+    );
+    const selectedAnnotationsUpdated = selectedAnnotationId !== prevProps.selectedAnnotationId;
 
     const redrawAnnotations = drawAnnotations !== prevProps.drawAnnotations
       || drawSearchAnnotations !== prevProps.drawSearchAnnotations;
@@ -155,6 +167,79 @@ export class OpenSeadragonViewer extends Component {
     this.viewer.removeAllHandlers();
   }
 
+  /** */
+  onCanvasClick(event) {
+    const {
+      canvasWorld,
+    } = this.props;
+
+    const { position: webPosition, eventSource: { viewport } } = event;
+    const point = viewport.pointFromPixel(webPosition);
+
+    const canvas = canvasWorld.canvasAtPoint(point);
+    if (!canvas) return;
+
+    const annos = this.annotationsAtPoint(canvas, point);
+    if (annos.length > 0) event.preventDefaultAction = true;
+
+    if (annos.length === 1) {
+      this.toggleAnnotation(annos[0].targetId, annos[0].id);
+    } else if (annos.length > 0) {
+      /** find the annotation that has the lowest number of nearby points inside the object? */
+      const annosWithClickScore = offset => (
+        (anno) => {
+          let score = 0;
+          for (let xOffset = -1 * offset; xOffset <= offset; xOffset += 1) {
+            for (let yOffset = -1 * offset; yOffset <= offset; yOffset += 1) {
+              if (this.isAnnotationAtPoint(anno, canvas, { x: point.x + xOffset, y: point.y + yOffset })) score += 1;
+            }
+          }
+
+          return { anno, score };
+        }
+      );
+
+      let annosWithScore = [];
+      annosWithScore = sortBy(annos.map(annosWithClickScore(50)), 'score');
+
+      if (annosWithScore[0].score !== annosWithScore[1].score) {
+        this.toggleAnnotation(annosWithScore[0].anno.targetId, annosWithScore[0].anno.id);
+      } else {
+        annosWithScore = sortBy(annos.map(annosWithClickScore(150)), 'score');
+
+        if (annosWithScore[0].score !== annosWithScore[1].score) {
+          this.toggleAnnotation(annosWithScore[0].anno.targetId, annosWithScore[0].anno.id);
+        } else {
+          annosWithScore = sortBy(annos.map(annosWithClickScore(500)), 'score');
+
+          this.toggleAnnotation(annosWithScore[0].anno.targetId, annosWithScore[0].anno.id);
+        }
+      }
+    }
+  }
+
+  /** */
+  onCanvasMouseMove(event) {
+    const {
+      canvasWorld,
+      hoverAnnotation,
+      hoveredAnnotationIds,
+      windowId,
+    } = this.props;
+
+    const { position: webPosition } = event;
+    const point = this.viewer.viewport.pointFromPixel(webPosition);
+
+    const canvas = canvasWorld.canvasAtPoint(point);
+    if (!canvas) return;
+
+    const annos = this.annotationsAtPoint(canvas, point);
+
+    if (xor(hoveredAnnotationIds, annos.map(a => a.id)).length > 0) {
+      hoverAnnotation(windowId, annos.map(a => a.id));
+    }
+  }
+
   /**
    * onUpdateViewport - fires during OpenSeadragon render method.
    */
@@ -186,12 +271,68 @@ export class OpenSeadragonViewer extends Component {
     };
   }
 
+  /** */
+  isAnnotationAtPoint(resource, canvas, point) {
+    const {
+      canvasWorld,
+    } = this.props;
+
+    const [canvasX, canvasY] = canvasWorld.canvasToWorldCoordinates(canvas.id);
+    const relativeX = point.x - canvasX;
+    const relativeY = point.y - canvasY;
+
+    if (resource.svgSelector) {
+      const context = this.osdCanvasOverlay.context2d;
+      const { svgPaths } = new CanvasAnnotationDisplay({ resource });
+      return svgPaths.some(path => context.isPointInPath(new Path2D(path), relativeX, relativeY));
+    }
+
+    if (resource.fragmentSelector) {
+      const [x, y, w, h] = resource.fragmentSelector;
+      return x <= relativeX && relativeX <= (x + w)
+        && y <= relativeY && relativeY <= (y + h);
+    }
+    return false;
+  }
+
+  /** */
+  annotationsAtPoint(canvas, point) {
+    const {
+      annotations, searchAnnotations,
+    } = this.props;
+
+    const lists = [...annotations, ...searchAnnotations];
+    const annos = flatten(lists.map(l => l.resources)).filter((resource) => {
+      if (canvas.id !== resource.targetId) return false;
+
+      return this.isAnnotationAtPoint(resource, canvas, point);
+    });
+
+    return annos;
+  }
+
+  /** */
+  toggleAnnotation(targetId, id) {
+    const {
+      selectedAnnotationId,
+      selectAnnotation,
+      deselectAnnotation,
+      windowId,
+    } = this.props;
+
+    if (selectedAnnotationId === id) {
+      deselectAnnotation(windowId, targetId, id);
+    } else {
+      selectAnnotation(windowId, targetId, id);
+    }
+  }
+
   /**
    * annotationsToContext - converts anontations to a canvas context
    */
   annotationsToContext(annotations, palette, isSearch = false) {
     const {
-      highlightAllAnnotations, hoveredAnnotationIds, selectedAnnotationIds, canvasWorld,
+      highlightAllAnnotations, hoveredAnnotationIds, selectedAnnotationId, canvasWorld,
     } = this.props;
     const context = this.osdCanvasOverlay.context2d;
     const zoomRatio = this.viewer.viewport.getZoom(true) / this.viewer.viewport.getMaxZoom();
@@ -204,7 +345,7 @@ export class OpenSeadragonViewer extends Component {
           offset,
           palette,
           resource,
-          selected: selectedAnnotationIds.includes(resource.id),
+          selected: selectedAnnotationId === resource.id,
           zoomRatio,
         });
         canvasAnnotationDisplay.toContext(context);
@@ -410,9 +551,11 @@ export class OpenSeadragonViewer extends Component {
 OpenSeadragonViewer.defaultProps = {
   annotations: [],
   children: null,
+  deselectAnnotation: () => {},
   drawAnnotations: true,
   drawSearchAnnotations: true,
   highlightAllAnnotations: false,
+  hoverAnnotation: () => {},
   hoveredAnnotationIds: [],
   infoResponses: [],
   label: null,
@@ -420,7 +563,8 @@ OpenSeadragonViewer.defaultProps = {
   osdConfig: {},
   palette: {},
   searchAnnotations: [],
-  selectedAnnotationIds: [],
+  selectAnnotation: () => {},
+  selectedAnnotationId: undefined,
   viewer: null,
 };
 
@@ -429,9 +573,11 @@ OpenSeadragonViewer.propTypes = {
   canvasWorld: PropTypes.instanceOf(CanvasWorld).isRequired,
   children: PropTypes.node,
   classes: PropTypes.objectOf(PropTypes.string).isRequired,
+  deselectAnnotation: PropTypes.func,
   drawAnnotations: PropTypes.bool,
   drawSearchAnnotations: PropTypes.bool,
   highlightAllAnnotations: PropTypes.bool,
+  hoverAnnotation: PropTypes.func,
   hoveredAnnotationIds: PropTypes.arrayOf(PropTypes.string),
   infoResponses: PropTypes.arrayOf(PropTypes.object),
   label: PropTypes.string,
@@ -439,7 +585,8 @@ OpenSeadragonViewer.propTypes = {
   osdConfig: PropTypes.object, // eslint-disable-line react/forbid-prop-types
   palette: PropTypes.object, // eslint-disable-line react/forbid-prop-types
   searchAnnotations: PropTypes.arrayOf(PropTypes.object),
-  selectedAnnotationIds: PropTypes.arrayOf(PropTypes.string),
+  selectAnnotation: PropTypes.func,
+  selectedAnnotationId: PropTypes.string,
   t: PropTypes.func.isRequired,
   updateViewport: PropTypes.func.isRequired,
   viewer: PropTypes.object, // eslint-disable-line react/forbid-prop-types

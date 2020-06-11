@@ -16,7 +16,6 @@ import {
   getVisibleCanvases,
   getViewer,
   getSearchAnnotationsForWindow,
-  getSelectedContentSearchAnnotationIds,
   getCompanionWindowsForContent,
   getTheme,
   getConfig,
@@ -51,8 +50,7 @@ const mapStateToProps = (state, { windowId }) => ({
     state,
     { windowId },
   ),
-  selectedAnnotationIds: getSelectedContentSearchAnnotationIds(state, { windowId })
-    + [getSelectedAnnotationId(state, { windowId })],
+  selectedAnnotationId: getSelectedAnnotationId(state, { windowId }),
   viewer: getViewer(state, { windowId }),
 });
 
@@ -62,6 +60,9 @@ const mapStateToProps = (state, { windowId }) => ({
  * @private
  */
 const mapDispatchToProps = {
+  deselectAnnotation: actions.deselectAnnotation,
+  hoverAnnotation: actions.hoverAnnotation,
+  selectAnnotation: actions.selectAnnotation,
   updateViewport: actions.updateViewport,
 };
 

@@ -4,8 +4,8 @@ import {
 import ActionTypes from '../actions/action-types';
 import MiradorManifest from '../../lib/MiradorManifest';
 import {
-  selectContentSearchAnnotations,
-  selectContentSearchAnnotation,
+  setContentSearchCurrentAnnotation,
+  selectAnnotation,
   setWorkspaceViewportPosition,
   updateWindow,
   setCanvas,
@@ -98,7 +98,7 @@ export function getAnnotationsBySearch(state, { canvasIds, companionWindowIds, w
 }
 
 /** @private */
-export function* selectAnnotationsOnCurrentCanvas({
+export function* setCurrentAnnotationsOnCurrentCanvas({
   annotationId, windowId, visibleCanvases,
 }) {
   if (annotationId && annotationId[0]) return;
@@ -111,7 +111,18 @@ export function* selectAnnotationsOnCurrentCanvas({
     getAnnotationsBySearch, { canvasIds: visibleCanvases, companionWindowIds, windowId },
   );
 
-  yield put(selectContentSearchAnnotations(windowId, annotationBySearch));
+  yield all(
+    Object.keys(annotationBySearch)
+      .map(companionWindowId => (
+        put(setContentSearchCurrentAnnotation(
+          windowId,
+          companionWindowId,
+          annotationBySearch[companionWindowId],
+        )))),
+  );
+
+  // if the currently selected annotation isn't on this canvas, do a thing.
+  yield put(selectAnnotation(windowId, null, Object.values(annotationBySearch)[0][0]));
 }
 
 /** @private */
@@ -152,15 +163,14 @@ export function* setCanvasOfFirstSearchResult({ companionWindowId, windowId }) {
   );
   if (!annotations || annotations.length === 0) return;
 
-  const annotationIds = [annotations[0].id];
-  yield put(selectContentSearchAnnotation(windowId, companionWindowId, annotationIds));
+  yield put(selectAnnotation(windowId, annotations[0].target, annotations[0].id));
 }
 
 /** @private */
-export function* setCanvasforSelectedAnnotation({ annotationId, companionWindowId, windowId }) {
+export function* setCanvasforSelectedAnnotation({ annotationId, windowId }) {
   const canvasIds = yield select(getVisibleCanvasIds, { windowId });
   const canvas = yield select(getCanvasForAnnotation, {
-    annotationId: annotationId[0], companionWindowId, windowId,
+    annotationId, windowId,
   });
 
   if (!canvas || canvasIds.includes(canvas.id)) return;
@@ -174,10 +184,10 @@ export default function* windowsSaga() {
   yield all([
     takeEvery(ActionTypes.ADD_WINDOW, fetchWindowManifest),
     takeEvery(ActionTypes.UPDATE_WINDOW, fetchWindowManifest),
-    takeEvery(ActionTypes.SET_CANVAS, selectAnnotationsOnCurrentCanvas),
+    takeEvery(ActionTypes.SET_CANVAS, setCurrentAnnotationsOnCurrentCanvas),
     takeEvery(ActionTypes.SET_WINDOW_VIEW_TYPE, updateVisibleCanvases),
     takeEvery(ActionTypes.RECEIVE_SEARCH, setCanvasOfFirstSearchResult),
-    takeEvery(ActionTypes.SELECT_CONTENT_SEARCH_ANNOTATION, setCanvasforSelectedAnnotation),
+    takeEvery(ActionTypes.SELECT_ANNOTATION, setCanvasforSelectedAnnotation),
     takeEvery(ActionTypes.FOCUS_WINDOW, panToFocusedWindow),
   ]);
 }

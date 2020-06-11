@@ -94,7 +94,7 @@ export const searchesReducer = (state = {}, action) => {
           return object;
         }, {}),
       };
-    case ActionTypes.SELECT_CONTENT_SEARCH_ANNOTATION:
+    case ActionTypes.SET_CONTENT_SEARCH_CURRENT_ANNOTATION:
       return {
         ...state,
         [action.windowId]: {
@@ -104,17 +104,6 @@ export const searchesReducer = (state = {}, action) => {
             selectedContentSearchAnnotation: action.annotationId,
           },
         },
-      };
-    case ActionTypes.SELECT_CONTENT_SEARCH_ANNOTATIONS:
-      return {
-        ...state,
-        [action.windowId]: Object.keys(state[action.windowId]).reduce((object, key) => {
-          object[key] = { // eslint-disable-line no-param-reassign
-            ...state[action.windowId][key],
-            selectedContentSearchAnnotation: action.annotationsBySearch[key],
-          };
-          return object;
-        }, {}),
       };
     case ActionTypes.IMPORT_MIRADOR_STATE:
       return {};

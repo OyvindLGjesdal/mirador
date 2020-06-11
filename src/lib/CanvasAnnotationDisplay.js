@@ -64,10 +64,21 @@ export default class CanvasAnnotationDisplay {
 
       // Resize the stroke based off of the zoomRatio (currentZoom / maxZoom)
       this.context.lineWidth /= this.zoomRatio;
-      // Reset the color if it is selected
-      if (this.selected) {
-        this.context.strokeStyle = this.color;
+
+      let currentPalette;
+      if (this.hovered) {
+        currentPalette = this.palette.hovered;
+      } else if (this.selected) {
+        currentPalette = this.palette.selected;
+      } else {
+        currentPalette = this.palette.default;
       }
+
+      // Reset the color if it is selected or hovered on
+      if (this.selected || this.hovered) {
+        this.context.strokeStyle = currentPalette.strokeStyle || currentPalette.fillStyle;
+      }
+
       this.context.stroke(p);
 
       // Wait to set the fill, so we can adjust the globalAlpha value if we need to
@@ -88,10 +99,10 @@ export default class CanvasAnnotationDisplay {
     fragment[1] += this.offset.y;
 
     let currentPalette;
-    if (this.hovered) {
-      currentPalette = this.palette.hovered;
-    } else if (this.selected) {
+    if (this.selected) {
       currentPalette = this.palette.selected;
+    } else if (this.hovered) {
+      currentPalette = this.palette.hovered;
     } else {
       currentPalette = this.palette.default;
     }

@@ -11,6 +11,7 @@ import {
   getResourceAnnotationForSearchHit,
   getResourceAnnotationLabel,
   getSelectedContentSearchAnnotationIds,
+  getSelectedAnnotationId,
 } from '../state/selectors';
 
 /**
@@ -44,7 +45,7 @@ const mapStateToProps = (state, {
       windowId,
     }),
     selected: selectedAnnotation[0] === realAnnoId,
-    windowSelected: getSelectedContentSearchAnnotationIds(state, { windowId })[0] === realAnnoId,
+    windowSelected: getSelectedAnnotationId(state, { windowId }) === realAnnoId,
   };
 };
 
@@ -53,9 +54,9 @@ const mapStateToProps = (state, {
  * @memberof SearchPanelNavigation
  * @private
  */
-const mapDispatchToProps = (dispatch, { companionWindowId, windowId }) => ({
-  selectContentSearchAnnotation: (...args) => dispatch(
-    actions.selectContentSearchAnnotation(windowId, companionWindowId, ...args),
+const mapDispatchToProps = (dispatch, { windowId }) => ({
+  selectAnnotation: (...args) => dispatch(
+    actions.selectAnnotation(windowId, ...args),
   ),
 });
 
