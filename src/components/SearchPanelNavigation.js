@@ -46,7 +46,6 @@ export class SearchPanelNavigation extends Component {
     } = this.props;
 
     const iconStyle = direction === 'rtl' ? { transform: 'rotate(180deg)' } : {};
-
     const currentHitIndex = searchHits
       .findIndex(val => val.annotations.includes(selectedContentSearchAnnotation[0]));
     return (
