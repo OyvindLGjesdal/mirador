@@ -111,6 +111,7 @@ export class OpenSeadragonViewer extends Component {
       drawSearchAnnotations,
       annotations, searchAnnotations,
       hoveredAnnotationIds, selectedAnnotationId,
+      highlightAllAnnotations,
     } = this.props;
 
     const annotationsUpdated = !OpenSeadragonViewer.annotationsMatch(
@@ -126,7 +127,8 @@ export class OpenSeadragonViewer extends Component {
     const selectedAnnotationsUpdated = selectedAnnotationId !== prevProps.selectedAnnotationId;
 
     const redrawAnnotations = drawAnnotations !== prevProps.drawAnnotations
-      || drawSearchAnnotations !== prevProps.drawSearchAnnotations;
+      || drawSearchAnnotations !== prevProps.drawSearchAnnotations
+      || highlightAllAnnotations !== prevProps.highlightAllAnnotations;
 
     if (
       searchAnnotationsUpdated
