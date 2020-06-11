@@ -35,6 +35,8 @@ const mapStateToProps = (state, {
     companionWindowId, windowId,
   });
 
+  const allAnnoIds = [annotationId, ...hit.annotations];
+
   return {
     adjacent: selectedCanvasIds.includes(hitAnnotation.targetId),
     annotation: hitAnnotation,
@@ -44,8 +46,8 @@ const mapStateToProps = (state, {
       canvasId: hitAnnotation.targetId,
       windowId,
     }),
-    selected: selectedAnnotation[0] === realAnnoId,
-    windowSelected: getSelectedAnnotationId(state, { windowId }) === realAnnoId,
+    selected: allAnnoIds.includes(selectedAnnotation[0]),
+    windowSelected: allAnnoIds.includes(getSelectedAnnotationId(state, { windowId })),
   };
 };
 
