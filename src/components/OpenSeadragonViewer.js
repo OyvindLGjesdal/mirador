@@ -178,6 +178,7 @@ export class OpenSeadragonViewer extends Component {
 
     const canvas = canvasWorld.canvasAtPoint(point);
     if (!canvas) return;
+    const [_canvasX, _canvasY, canvasWidth, canvasHeight] = canvasWorld.canvasToWorldCoordinates(canvas.id);
 
     const annos = this.annotationsAtPoint(canvas, point);
     if (annos.length > 0) event.preventDefaultAction = true;
@@ -186,35 +187,33 @@ export class OpenSeadragonViewer extends Component {
       this.toggleAnnotation(annos[0].targetId, annos[0].id);
     } else if (annos.length > 0) {
       /** find the annotation that has the lowest number of nearby points inside the object? */
-      const annosWithClickScore = offset => (
-        (anno) => {
+      const annosWithClickScore = (radius) => {
+        const degreesToRadians = Math.PI / 180;
+
+        return (anno) => {
           let score = 0;
-          for (let xOffset = -1 * offset; xOffset <= offset; xOffset += 1) {
-            for (let yOffset = -1 * offset; yOffset <= offset; yOffset += 1) {
-              if (this.isAnnotationAtPoint(anno, canvas, { x: point.x + xOffset, y: point.y + yOffset })) score += 1;
-            }
+          for (let degrees = 0; degrees < 360; degrees += 1) {
+            const x = Math.cos(degrees * degreesToRadians) * radius + point.x;
+            const y = Math.sin(degrees * degreesToRadians) * radius + point.y;
+
+            if (this.isAnnotationAtPoint(anno, canvas, { x, y })) score += 1;
           }
 
           return { anno, score };
-        }
-      );
+        };
+      };
 
       let annosWithScore = [];
-      annosWithScore = sortBy(annos.map(annosWithClickScore(50)), 'score');
+      let radius = 1;
+      annosWithScore = sortBy(annos.map(annosWithClickScore(radius)), 'score');
 
-      if (annosWithScore[0].score !== annosWithScore[1].score) {
-        this.toggleAnnotation(annosWithScore[0].anno.targetId, annosWithScore[0].anno.id);
-      } else {
-        annosWithScore = sortBy(annos.map(annosWithClickScore(150)), 'score');
-
-        if (annosWithScore[0].score !== annosWithScore[1].score) {
-          this.toggleAnnotation(annosWithScore[0].anno.targetId, annosWithScore[0].anno.id);
-        } else {
-          annosWithScore = sortBy(annos.map(annosWithClickScore(500)), 'score');
-
-          this.toggleAnnotation(annosWithScore[0].anno.targetId, annosWithScore[0].anno.id);
-        }
+      while (radius < Math.max(canvasWidth, canvasHeight)
+        && annosWithScore[0].score === annosWithScore[1].score) {
+        radius *= 2;
+        annosWithScore = sortBy(annos.map(annosWithClickScore(radius)), 'score');
       }
+
+      this.toggleAnnotation(annosWithScore[0].anno.targetId, annosWithScore[0].anno.id);
     }
   }
 
